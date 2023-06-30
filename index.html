@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Drag and Drop Image Upload</title>
+  <style>
+    .drop-zone {
+      width: 300px;
+      height: 300px;
+      border: 2px dashed #ccc;
+      text-align: center;
+      font-size: 20px;
+      padding: 10px;
+      margin: 0 auto;
+    }
+
+    .image-preview {
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .image-preview img {
+      width: 200px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="drop-zone" id="dropZone">
+    Drag and drop images here
+  </div>
+
+  <div class="image-preview" id="imagePreview"></div>
+
+  <script>
+    const dropZone = document.getElementById("dropZone");
+    const imagePreview = document.getElementById("imagePreview");
+
+    dropZone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropZone.style.border = "2px dashed #000";
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.style.border = "2px dashed #ccc";
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropZone.style.border = "2px dashed #ccc";
+
+      const files = event.dataTransfer.files;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+
+        reader.addEventListener("load", () => {
+          const image = new Image();
+          image.src = reader.result;
+
+          image.onload = () => {
+            imagePreview.insertBefore(image, imagePreview.firstChild);
+          };
+        });
+
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
+</body>
+</html>
