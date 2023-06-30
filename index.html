@@ -1,73 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Drag and Drop Image Upload</title>
-  <style>
-    .drop-zone {
-      width: 300px;
-      height: 300px;
-      border: 2px dashed #ccc;
-      text-align: center;
-      font-size: 20px;
-      padding: 10px;
-      margin: 0 auto;
-    }
+    <title>Image Uploader</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        var clientId = '793239670438-rc85k56u3n6u9m3vhg2uheqlj06rslhq.apps.googleusercontent.com';
+        var apiKey = 'AIzaSyCDfAaOjoIKKpyUjhqEIlG9Nbe4xtFknLQ';
+        var scope = 'https://www.googleapis.com/auth/drive.file';
+        var redirectUri = 'https://majosgithub.github.io/irrigation/';
 
-    .image-preview {
-      display: flex;
-      flex-direction: column-reverse;
-      align-items: center;
-      margin-top: 20px;
-    }
+        function handleClientLoad() {
+            gapi.load('client:auth2', initClient);
+        }
 
-    .image-preview img {
-      width: 1200px;
-      height: auto;
-      margin-bottom: 10px;
-    }
-  </style>
+        function initClient() {
+            gapi.client.init({
+                clientId: clientId,
+                apiKey: apiKey,
+                scope: scope,
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+            }).then(function () {
+                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+                updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+            });
+        }
+
+        function updateSigninStatus(isSignedIn) {
+            if (isSignedIn) {
+                $('#upload-btn').prop('disabled', false);
+            } else {
+                $('#upload-btn').prop('disabled', true);
+            }
+        }
+
+        function handleAuthClick() {
+            gapi.auth2.getAuthInstance().signIn();
+        }
+
+        function handleSignoutClick() {
+            gapi.auth2.getAuthInstance().signOut();
+        }
+
+        function handleFiles(files) {
+            var formData = new FormData();
+            var file = files[0];
+            formData.append('file', file, file.name);
+            
+            $.ajax({
+                url: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+                type: 'POST',
+                processData: false,
+                contentType: false,
+                data: formData,
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + gapi.auth.getToken().access_token);
+                },
+                success: function (response) {
+                    console.log('File uploaded successfully');
+                },
+                error: function (error) {
+                    console.error('Error uploading file:', error);
+                }
+            });
+        }
+    </script>
 </head>
 <body>
-  <div class="drop-zone" id="dropZone">
-    Drag and drop images here
-  </div>
+    <h1>Image Uploader</h1>
+    <div id="auth-status">
+        <p>You are not signed in.</p>
+        <button id="signin-btn" onclick="handleAuthClick()">Sign In</button>
+    </div>
+    <div>
+        <input type="file" id="file-input" onchange="handleFiles(this.files)" />
+    </div>
+    <button id="upload-btn" disabled>Upload Image</button>
+    <button id="signout-btn" onclick="handleSignoutClick()">Sign Out</button>
 
-  <div class="image-preview" id="imagePreview"></div>
-
-  <script>
-    const dropZone = document.getElementById("dropZone");
-    const imagePreview = document.getElementById("imagePreview");
-
-    dropZone.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      dropZone.style.border = "2px dashed #000";
-    });
-
-    dropZone.addEventListener("dragleave", () => {
-      dropZone.style.border = "2px dashed #ccc";
-    });
-
-    dropZone.addEventListener("drop", (event) => {
-      event.preventDefault();
-      dropZone.style.border = "2px dashed #ccc";
-
-      const files = event.dataTransfer.files;
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const reader = new FileReader();
-
-        reader.addEventListener("load", () => {
-          const image = new Image();
-          image.src = reader.result;
-
-          image.onload = () => {
-            imagePreview.insertBefore(image, imagePreview.firstChild);
-          };
-        });
-
-        reader.readAsDataURL(file);
-      }
-    });
-  </script>
+    <script src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
 </body>
 </html>
